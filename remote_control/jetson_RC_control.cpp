@@ -114,17 +114,23 @@ void handle_key(int fd) {
                     std::cout << "↓ Backward" << std::endl;
                     break;
                 case 'C': // →
-                    send_command(fd, 255, 220, 45);
+                    send_command(fd, 200, 170, 60);
                     std::cout << "→ Right" << std::endl;
                     break;
                 case 'D': // ←
-                    send_command(fd, 220, 255, -30);
+                    send_command(fd, 170, 200, -60);
                     std::cout << "← Left" << std::endl;
                     break;
             }
         }
     }
+    else if (c == ' ') {  // 스페이스바
+    send_command(fd, 0, 0, 0);
+    std::cout << "⏸ Stop" << std::endl;
+    }
+
     else if (c == 'q' || c == 'Q') {
+        send_command(fd,0,0,0);
         std::cout << "프로그램 종료" << std::endl;
         reset_terminal_mode();
         exit(0);
@@ -133,7 +139,7 @@ void handle_key(int fd) {
 
 // ---------------- Main ----------------
 int main() {
-    int fd = uart_open("/dev/ttyUSB0", 9600);
+    int fd = uart_open("/dev/ttyACM0", 9600);
     if (fd == -1) return -1;
 
     std::cout << "Jetson RC Control Start" << std::endl;
