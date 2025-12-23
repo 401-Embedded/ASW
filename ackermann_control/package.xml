@@ -4,7 +4,7 @@
   <name>ackermann_control</name>
   <version>0.1.0</version>
   <description>Ackermann steering control node for cmd_vel to UART communication</description>
-  <maintainer email="you@example.com">ASW Team</maintainer>
+  <maintainer email="jeremy1103@gmail.com">ASW Team</maintainer>
   <license>MIT</license>
 
   <depend>rclpy</depend>
