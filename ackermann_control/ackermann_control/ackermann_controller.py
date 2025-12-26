@@ -71,25 +71,27 @@ class AckermannController(Node):
     
     def cmd_vel_callback(self, msg):
         """
-        Convert cmd_vel (linear.x, angular.z) to Ackermann steering commands
+        Convert cmd_vel to Ackermann steering commands
         
-        Ackermann steering formula:
-        steering_angle = atan(angular_velocity * wheelbase / linear_velocity)
+        Now receiving direct Ackermann commands from Nav2:
+        - linear.x: forward velocity (m/s)
+        - angular.z: steering angle (radians)
         
         Differential control:
-        - Calculate inner/outer wheel speeds based on turning radius
-        - Mimics real vehicle differential gear behavior
+        - Calculate inner/outer wheel speeds based on steering angle
         """
         linear_vel = msg.linear.x  # m/s, forward velocity
-        angular_vel = msg.angular.z  # rad/s, rotation rate
+        steering_angle_rad = msg.angular.z  # radians, steering angle from Nav2
         
-        # Calculate steering angle and motor speeds
-        if abs(linear_vel) > 0.01:  # Moving forward/backward
-            # steering_angle = atan(L * ω / v)
-            steering_angle_rad = math.atan2(angular_vel * self.wheelbase, linear_vel)
-            steering_angle_deg = math.degrees(steering_angle_rad)
-            
-            # Convert velocity to motor PWM (-255 to 255)
+        # Convert radians to degrees
+        steering_angle_deg = math.degrees(steering_angle_rad)
+        
+        # Clamp steering angle to max range
+        steering_angle_deg = max(-self.max_steering_angle, 
+                                min(self.max_steering_angle, steering_angle_deg))
+        
+        # Convert velocity to motor PWM (-255 to 255)
+        if abs(linear_vel) > 0.01:  # Moving
             speed_ratio = linear_vel / self.max_speed
             speed_ratio = max(-1.0, min(1.0, speed_ratio))  # Clamp to [-1, 1]
             base_pwm = int(speed_ratio * 255)
@@ -102,34 +104,10 @@ class AckermannController(Node):
             else:
                 left_motor = base_pwm
                 right_motor = base_pwm
-            
-        elif abs(angular_vel) > 0.01:  # Pure rotation (in-place turn)
-            # Ackermann vehicles cannot rotate in place
-            # Use maximum steering angle and slow forward motion for tight turn
-            steering_angle_deg = self.max_steering_angle if angular_vel > 0 else -self.max_steering_angle
-            
-            # Slow forward speed for tight turning (adjustable)
-            # Scale with angular velocity but keep it slow
-            slow_speed = min(abs(angular_vel) * 30, 80)  # Max 80 PWM for safety
-            
-            if self.enable_differential:
-                left_motor, right_motor = self.calculate_differential(
-                    int(slow_speed), steering_angle_deg
-                )
-            else:
-                left_motor = int(slow_speed)
-                right_motor = int(slow_speed)
-            
-            self.get_logger().debug('In-place turn requested: slow forward + max steering')
                 
         else:  # Stopped
-            steering_angle_deg = 0.0
             left_motor = 0
             right_motor = 0
-        
-        # Clamp steering angle
-        steering_angle_deg = max(-self.max_steering_angle, 
-                                min(self.max_steering_angle, steering_angle_deg))
         
         # Convert steering angle to servo value
         steering_value = int(steering_angle_deg)
@@ -139,7 +117,7 @@ class AckermannController(Node):
         
         # Log for debugging
         self.get_logger().debug(
-            f'cmd_vel: linear={linear_vel:.2f} angular={angular_vel:.2f} '
+            f'cmd_vel: linear={linear_vel:.2f} steer_rad={steering_angle_rad:.3f} '
             f'-> L={left_motor} R={right_motor} steer={steering_angle_deg:.1f}°'
         )
     
