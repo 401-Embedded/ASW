@@ -81,7 +81,7 @@ class AckermannController(Node):
         - Calculate inner/outer wheel speeds based on steering angle
         """
         linear_vel = msg.linear.x  # m/s, forward velocity
-        steering_angle_rad = msg.angular.z  # radians, steering angle from Nav2
+        steering_angle_rad = -msg.angular.z  # radians, steering angle from Nav2
         
         # Convert radians to degrees
         steering_angle_deg = math.degrees(steering_angle_rad)
@@ -92,7 +92,7 @@ class AckermannController(Node):
         
         # Convert velocity to motor PWM (-255 to 255)
         speed_ratio = linear_vel / self.max_speed
-        speed_ratio = max(-1.0, min(1.0, speed_ratio))  # Clamp to [-1, 1]
+        speed_ratio = max(-1.0, min(1.0, speed_ratio)) #전후진의 최댓값 설정
         base_pwm = int(speed_ratio * 255)
         
         # Apply differential control if enabled and turning
