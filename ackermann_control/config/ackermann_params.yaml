@@ -1,0 +1,10 @@
+ackermann_controller:
+  ros__parameters:
+    uart_port: '/dev/ttyACM0'
+    baud_rate: 9600
+    wheelbase: 0.175  # 17.5 cm
+    track_width: 0.205  # 20.5 cm
+    max_speed: 1.0    # m/s
+    max_steering_angle: 60.0  # degrees
+    cmd_vel_topic: '/cmd_vel'
+    enable_differential: true  # Enable differential control
