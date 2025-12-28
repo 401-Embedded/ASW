@@ -48,7 +48,7 @@ class AckermannController(Node):
         try:
             self.serial_port = serial.Serial(uart_port, baud_rate, timeout=1)
             time.sleep(2)  # Wait for Arduino to reset
-            self.get_logger().info(f'✅ UART opened: {uart_port} @ {baud_rate}')
+            self.get_logger().info(f'✅ UART opened: {uart_port} @ {baud_rate}')Subscribe
         except Exception as e:
             self.get_logger().error(f'❌ Failed to open UART: {e}')
             raise
@@ -114,12 +114,6 @@ class AckermannController(Node):
         
         # Send command to Arduino
         self.send_uart_command(left_motor, right_motor, steering_value)
-        
-        # Log for debugging
-        self.get_logger().debug(
-            f'cmd_vel: linear={linear_vel:.2f} steer_rad={steering_angle_rad:.3f} '
-            f'-> L={left_motor} R={right_motor} steer={steering_angle_deg:.1f}°'
-        )
     
     def calculate_differential(self, base_speed, steering_angle_deg):
         """
@@ -171,12 +165,6 @@ class AckermannController(Node):
             left_motor = int(base_speed * speed_ratio)
             right_motor = base_speed
         
-        self.get_logger().debug(
-            f'Differential: steer={steering_angle_deg:.1f}° '
-            f'R={turning_radius:.3f}m ratio={speed_ratio:.3f} '
-            f'L={left_motor} R={right_motor}'
-        )
-        
         return left_motor, right_motor
     
     def send_uart_command(self, left_motor, right_motor, steering):
@@ -187,15 +175,15 @@ class AckermannController(Node):
         try:
             command = f"L={left_motor},R={right_motor},S={steering}\n"
             self.serial_port.write(command.encode('utf-8'))
-            self.get_logger().debug(f'UART TX: {command.strip()}')
+            self.get_logger().info(f'📡 UART TX: {command.strip()}')
         except Exception as e:
             self.get_logger().error(f'UART send error: {e}')
-    
-    def destroy_node(self):
-        """Clean up on shutdown"""
-        # Stop the vehicle
-        self.send_uart_command(0, 0, 0)
-        self.serial_port.close()
+        try:
+            command = f"L={left_motor},R={right_motor},S={steering}\n"
+            self.serial_port.write(command.encode('utf-8'))
+            self.get_logger().info(f'L={left_motor:4d} R={right_motor:4d} S={steering:3d}°')
+        except Exception as e:
+            self.get_logger().error(f'UART send error: {e}')
         self.get_logger().info('🛑 Ackermann Controller stopped')
         super().destroy_node()
 
